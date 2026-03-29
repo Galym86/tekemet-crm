@@ -161,9 +161,11 @@ export function OrdersPage() {
           <div className="space-y-4">
             {lines.map((line, idx) => {
               const area = lineAreaSqm(line)
+              const opt = priceOptions.find(o => o.id === line.price_option_id)
+              const lineSum = (area && opt) ? baseLineTotal(area, opt.price_per_sqm) : 0
+
               return (
                 <div key={line.id} className="p-4 bg-slate-50 rounded-xl relative border border-slate-100">
-                  {/* ВОТ ЗДЕСЬ МЫ ИСПОЛЬЗУЕМ idx, ЧТОБЫ ВЕРСЕЛЬ НЕ РУГАЛСЯ */}
                   <div className="text-[10px] font-black text-slate-300 uppercase mb-2">Ковёр №{idx + 1}</div>
                   
                   <select value={line.price_option_id} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, price_option_id: e.target.value} : l))}
@@ -180,7 +182,35 @@ export function OrdersPage() {
                       <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600" />
                     </div>
                   </div>
-                  {area && <div className="mt-3 text-right text-xs font-black text-slate-400 uppercase">Площадь: {area} м²</div>}
+
+                  {/* ВОТ ЭТОТ БЛОК Я ВЕРНУЛ */}
+                  <div className="mt-3 flex justify-between items-center">
+                    <div className="text-[10px] font-black text-slate-400 uppercase">
+                      {area ? `Площадь: ${area} м²` : ''}
+                    </div>
+                    <div className="text-sm font-black text-slate-600">
+                      {lineSum > 0 ? `${lineSum.toLocaleString('ru-KZ')} ₸` : ''}
+                    </div>
+                  </div>
+
                   {lines.length > 1 && <button type="button" onClick={() => setLines(lines.filter(l => l.id !== line.id))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-lg">×</button>}
                 </div>
               )
+            })}
+          </div>
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
+          <div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase">Общая сумма</div>
+            <div className="text-2xl font-black text-emerald-600">{receptionTotal.toLocaleString('ru-KZ')} ₸</div>
+          </div>
+          <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm active:scale-95 disabled:opacity-50">
+            Оформить
+          </button>
+        </div>
+      </form>
+      {msg && <div className={`mt-4 p-4 rounded-2xl text-center font-black uppercase text-xs ${msg.type === 'ok' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{msg.text}</div>}
+    </div>
+  )
+}
