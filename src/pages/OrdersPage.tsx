@@ -165,7 +165,7 @@ export function OrdersPage() {
           </div>
           
           <div className="space-y-4">
-            {lines.map((line, idx) => {
+            {lines.map((line) => {
               const area = lineAreaSqm(line)
               return (
                 <div key={line.id} className="p-4 bg-slate-50 rounded-xl relative border border-slate-100">
