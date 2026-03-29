@@ -332,14 +332,7 @@ export function OrdersPage() {
               </option>
             ))}
           </select>
-          {selectedCity && (
-            <p className="mt-2 text-sm text-slate-500">
-              Город заказа:{' '}
-              <span className="font-medium text-slate-800">{selectedCity.name}</span>
-              . Ниже для каждого ковра укажите тип, длину и ширину (м² посчитаются
-              сами).
-            </p>
-          )}
+          
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
