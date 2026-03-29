@@ -108,7 +108,7 @@ export function OrdersPage() {
       }).filter(Boolean)
 
       await supabase.from('order_items').insert(insertRows)
-      setMsg({ type: 'ok', text: 'Заказ оформлен!' })
+      setMsg({ type: 'ok', text: 'Заказ успешно оформлен!' })
       setPhone(''); setClientName(''); setAddress(''); setComment('');
       setLines([{ id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])
     } catch (err: any) {
@@ -122,6 +122,7 @@ export function OrdersPage() {
       
       <form onSubmit={submitOrder} className="space-y-4">
         
+        {/* Данные клиента */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Имя клиента</label>
           <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="Имя" />
@@ -152,6 +153,7 @@ export function OrdersPage() {
           </div>
         </div>
 
+        {/* Ковры */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex justify-between items-center mb-4">
             <label className="text-xs font-bold text-slate-400 uppercase">Изделия</label>
@@ -166,29 +168,30 @@ export function OrdersPage() {
 
               return (
                 <div key={line.id} className="p-4 bg-slate-50 rounded-xl relative border border-slate-100">
+                  {/* ИСПОЛЬЗУЕМ idx ТУТ - ТЕПЕРЬ ВЕРСЕЛЬ НЕ ОШИБЕТСЯ */}
                   <div className="text-[10px] font-black text-slate-300 uppercase mb-2">Ковёр №{idx + 1}</div>
                   
                   <select value={line.price_option_id} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, price_option_id: e.target.value} : l))}
-                    className="w-full mb-3 bg-white border-none rounded-lg p-3 font-bold text-slate-700 shadow-sm">
+                    className="w-full mb-3 bg-white border-none rounded-lg p-3 font-bold text-slate-700 shadow-sm shadow-slate-100">
                     {optionsForCity.map(o => <option key={o.id} value={o.id}>{o.name} ({Number(o.price_per_sqm)} ₸/м²)</option>)}
                   </select>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white p-2 rounded-lg shadow-sm">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Длина</span>
-                      <input type="text" inputMode="decimal" value={line.length_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, length_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600" />
+                    <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Длина (м)</span>
+                      <input type="text" inputMode="decimal" value={line.length_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, length_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600 outline-none" placeholder="0.0" />
                     </div>
-                    <div className="bg-white p-2 rounded-lg shadow-sm">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Ширина</span>
-                      <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600" />
+                    <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Ширина (м)</span>
+                      <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600 outline-none" placeholder="0.0" />
                     </div>
                   </div>
 
-                  {/* ВОТ ЭТОТ БЛОК Я ВЕРНУЛ */}
-                  <div className="mt-3 flex justify-between items-center">
+                  {/* РАСЧЕТ ВНУТРИ КАРТОЧКИ */}
+                  <div className="mt-3 flex justify-between items-center border-t border-slate-200 pt-2">
                     <div className="text-[10px] font-black text-slate-400 uppercase">
                       {area ? `Площадь: ${area} м²` : ''}
                     </div>
-                    <div className="text-sm font-black text-slate-600">
+                    <div className="text-sm font-black text-emerald-600">
                       {lineSum > 0 ? `${lineSum.toLocaleString('ru-KZ')} ₸` : ''}
                     </div>
                   </div>
@@ -200,13 +203,14 @@ export function OrdersPage() {
           </div>
         </div>
 
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
+        {/* Подвал с итогом */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
           <div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase">Общая сумма</div>
-            <div className="text-2xl font-black text-emerald-600">{receptionTotal.toLocaleString('ru-KZ')} ₸</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Итого к оплате</div>
+            <div className="text-2xl font-black text-emerald-600 tracking-tight">{receptionTotal.toLocaleString('ru-KZ')} ₸</div>
           </div>
-          <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm active:scale-95 disabled:opacity-50">
-            Оформить
+          <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm shadow-xl shadow-sky-200 active:scale-95 disabled:opacity-50">
+            {loading ? '...' : 'Оформить'}
           </button>
         </div>
       </form>
