@@ -104,7 +104,7 @@ export function OrdersPage() {
         return a && opt ? { order_id: orderRow.id, area_sqm: a, unit_price: Number(opt.price_per_sqm), price_label: opt.name } : null
       }).filter(Boolean)
       await supabase.from('order_items').insert(insertRows)
-      setMsg({ type: 'ok', text: 'Заказ оформлен!' })
+      setMsg({ type: 'ok', text: 'Заказ успешно оформлен!' })
       setPhone(''); setClientName(''); setAddress(''); setComment('');
       setLines([{ id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])
     } catch (err: any) {
@@ -113,84 +113,87 @@ export function OrdersPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-4 pb-32 tracking-tight">
-      <h2 className="text-2xl font-black mb-6 text-slate-900 uppercase">Приём заказа</h2>
+    <div className="max-w-xl mx-auto p-4 pb-32 bg-slate-50 min-h-screen font-sans">
+      <h2 className="text-2xl font-black mb-6 text-slate-900 uppercase tracking-tight text-center">Приём заказа</h2>
+      
       <form onSubmit={submitOrder} className="space-y-4">
         
-        {/* ИМЯ */}
+        {/* ГОРОД - КРУПНЫЕ КНОПКИ */}
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Имя клиента</label>
-          <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="Имя" />
-        </div>
-
-        {/* ГОРОД - В ОДНУ СТРОКУ */}
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Город</label>
-          <div className="flex flex-wrap gap-2">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-3 ml-1">Ваш город</label>
+          <div className="flex gap-2">
             {cities.map(c => (
               <button key={c.id} type="button" onClick={() => setCityId(c.id)} 
-                className={`flex-1 min-w-[110px] p-3 rounded-xl font-bold transition-all border-2 text-sm ${cityId === c.id ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-50 bg-slate-50 text-slate-400'}`}>
+                className={`flex-1 p-4 rounded-2xl font-black text-sm transition-all border-2 ${cityId === c.id ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-50 bg-slate-50 text-slate-400'}`}>
                 {c.name}
               </button>
             ))}
           </div>
         </div>
 
-        {/* АДРЕС */}
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Адрес доставки</label>
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 font-bold" placeholder="Улица, дом, кв" />
-        </div>
-
-        {/* ТЕЛЕФОН */}
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Телефон</label>
-          <div className="flex gap-2">
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="flex-1 bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="770..." />
-            <button type="button" onClick={searchClient} className="bg-slate-900 text-white px-6 rounded-xl font-bold uppercase text-xs">Поиск</button>
+        {/* КЛИЕНТ */}
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Телефон</label>
+            <div className="flex gap-2">
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="flex-1 bg-slate-50 border-none rounded-xl p-4 text-lg font-bold outline-none focus:ring-2 focus:ring-sky-100" placeholder="7707..." />
+              <button type="button" onClick={searchClient} className="bg-slate-900 text-white px-6 rounded-xl font-bold uppercase text-[10px]">Поиск</button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Имя</label>
+            <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 text-lg font-bold outline-none" placeholder="Имя клиента" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2 ml-1">Адрес доставки</label>
+            <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 font-bold outline-none" placeholder="Улица, дом, кв" />
           </div>
         </div>
 
-        {/* КОВРЫ */}
+        {/* ДАННЫЕ КОВРОВ */}
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <div className="flex justify-between items-center mb-4">
-            <label className="text-xs font-bold text-slate-400 uppercase ml-1">Данные ковров</label>
+          <div className="flex justify-between items-center mb-4 ml-1">
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Изделия</label>
             <button type="button" onClick={() => setLines([...lines, { id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])} className="text-sky-600 font-bold text-sm">+ Добавить</button>
           </div>
+          
           <div className="space-y-4">
             {lines.map((line, idx) => {
               const area = lineAreaSqm(line)
               const opt = priceOptions.find(o => o.id === line.price_option_id)
               const lineSum = (area && opt) ? area * Number(opt.price_per_sqm) : 0
+
               return (
                 <div key={line.id} className="p-4 bg-slate-50/50 rounded-2xl relative border border-slate-100">
-                  <div className="text-[10px] font-black text-slate-300 uppercase mb-2 ml-1 text-center">Изделие №{idx + 1}</div>
+                  <div className="text-[9px] font-black text-slate-300 uppercase mb-2 text-center">Изделие №{idx + 1}</div>
+                  
                   <select value={line.price_option_id} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, price_option_id: e.target.value} : l))}
-                    className="w-full mb-3 bg-white border border-slate-100 rounded-xl p-3 font-bold text-slate-700 shadow-sm outline-none">
+                    className="w-full mb-3 bg-white border border-slate-100 rounded-xl p-3 font-bold text-slate-700 outline-none">
                     {optionsForCity.map(o => <option key={o.id} value={o.id}>{o.name} ({Number(o.price_per_sqm)} ₸/м²)</option>)}
                   </select>
-                  
-                  {/* ДЛИНА, ШИРИНА, ПЛОЩАДЬ В ОДНУ СТРОКУ */}
-                  <div className="grid grid-cols-3 gap-2 bg-white p-2 rounded-xl border border-slate-100">
+
+                  {/* РЯД: ДЛИНА + ШИРИНА + КВ.М */}
+                  <div className="grid grid-cols-3 gap-2 bg-white p-2 rounded-xl border border-slate-100 shadow-inner">
                     <div className="text-center border-r border-slate-100">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Длина</span>
-                      <input type="text" inputMode="decimal" value={line.length_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, length_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-base text-sky-600 outline-none text-center" placeholder="0" />
+                      <span className="text-[8px] text-slate-400 font-bold uppercase block mb-1">Длина</span>
+                      <input type="text" inputMode="decimal" value={line.length_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, length_m: e.target.value} : l))} className="w-full text-center font-black text-base text-sky-600 outline-none bg-transparent" placeholder="0" />
                     </div>
                     <div className="text-center border-r border-slate-100">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Ширина</span>
-                      <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-base text-sky-600 outline-none text-center" placeholder="0" />
+                      <span className="text-[8px] text-slate-400 font-bold uppercase block mb-1">Ширина</span>
+                      <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full text-center font-black text-base text-sky-600 outline-none bg-transparent" placeholder="0" />
                     </div>
-                    <div className="text-center">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Кв. м</span>
-                      <div className="font-black text-base text-slate-400 p-1">{area ? `${area}` : '—'}</div>
+                    <div className="text-center flex flex-col justify-center">
+                      <span className="text-[8px] text-slate-400 font-bold uppercase block mb-1">Кв. м</span>
+                      <div className="font-black text-base text-slate-400">{area || '—'}</div>
                     </div>
                   </div>
 
                   <div className="mt-3 text-right">
-                    <div className="text-xl font-black text-emerald-600">
-                      {lineSum > 0 ? `${lineSum.toLocaleString('ru-KZ')} ₸` : '0 ₸'}
+                    <div className="text-lg font-black text-emerald-600">
+                      {lineSum.toLocaleString('ru-KZ')} ₸
                     </div>
                   </div>
+
                   {lines.length > 1 && <button type="button" onClick={() => setLines(lines.filter(l => l.id !== line.id))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-lg">×</button>}
                 </div>
               )
@@ -198,18 +201,23 @@ export function OrdersPage() {
           </div>
         </div>
 
-        {/* ИТОГО - ЗАКРЕПЛЕНО СНИЗУ */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
+        {/* ФИНАЛЬНЫЙ РЕЗУЛЬТАТ (ЗАКРЕПЛЕН) */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-50">
           <div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Всего к оплате</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Итого</div>
             <div className="text-2xl font-black text-emerald-600 tracking-tight">{receptionTotal.toLocaleString('ru-KZ')} ₸</div>
           </div>
-          <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 disabled:opacity-50">
-            {loading ? '...' : 'Оформить'}
+          <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm active:scale-95 disabled:opacity-50 shadow-lg shadow-sky-200 transition-transform">
+            {loading ? '...' : 'Принять'}
           </button>
         </div>
       </form>
-      {msg && <div className={`mt-4 p-4 rounded-2xl text-center font-black uppercase text-xs ${msg.type === 'ok' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{msg.text}</div>}
+      
+      {msg && (
+        <div className={`mt-4 p-4 rounded-2xl text-center font-black uppercase text-[10px] tracking-widest shadow-sm ${msg.type === 'ok' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
+          {msg.text}
+        </div>
+      )}
     </div>
   )
 }
