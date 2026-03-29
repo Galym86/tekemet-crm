@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { normalizePhone } from '../lib/phone'
-import { baseLineTotal } from '../lib/pricing'
 import type { City, Client, PriceOption } from '../types/database'
 
 type LineDraft = {
@@ -59,11 +58,15 @@ export function OrdersPage() {
     [priceOptions, cityId]
   )
 
+  // Расчет общей суммы всего заказа
   const receptionTotal = useMemo(() => {
     return lines.reduce((sum, line) => {
       const a = lineAreaSqm(line)
       const opt = priceOptions.find((o) => o.id === line.price_option_id)
-      return (a && opt) ? sum + baseLineTotal(a, opt.price_per_sqm) : sum
+      if (a && opt) {
+        return sum + (a * Number(opt.price_per_sqm))
+      }
+      return sum
     }, 0)
   }, [lines, priceOptions])
 
@@ -87,7 +90,6 @@ export function OrdersPage() {
       const p = normalizePhone(phone)
       let clientId = foundClient?.id
       const fullComment = `Адрес: ${address}. ${comment}`.trim()
-
       if (!clientId) {
         const { data: ins, error: e1 } = await supabase.from('clients').insert({
           phone: p, name: clientName || 'Клиент', city_id: cityId
@@ -95,20 +97,17 @@ export function OrdersPage() {
         if (e1) throw e1
         clientId = ins.id
       }
-      
       const { data: orderRow, error: e3 } = await supabase.from('orders').insert({
         client_id: clientId, city_id: cityId, comment: fullComment
       }).select('id').single()
       if (e3) throw e3
-
       const insertRows = lines.map(l => {
         const a = lineAreaSqm(l)
         const opt = priceOptions.find(o => o.id === l.price_option_id)
-        return a && opt ? { order_id: orderRow.id, area_sqm: a, unit_price: opt.price_per_sqm, price_label: opt.name } : null
+        return a && opt ? { order_id: orderRow.id, area_sqm: a, unit_price: Number(opt.price_per_sqm), price_label: opt.name } : null
       }).filter(Boolean)
-
       await supabase.from('order_items').insert(insertRows)
-      setMsg({ type: 'ok', text: 'Заказ успешно оформлен!' })
+      setMsg({ type: 'ok', text: 'Заказ оформлен!' })
       setPhone(''); setClientName(''); setAddress(''); setComment('');
       setLines([{ id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])
     } catch (err: any) {
@@ -117,105 +116,100 @@ export function OrdersPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto p-4 pb-32 tracking-tight">
-      <h2 className="text-2xl font-black mb-6 text-slate-950 uppercase">Приём заказа</h2>
+    <div className="max-w-xl mx-auto p-4 pb-32">
+      <h2 className="text-2xl font-black mb-6 text-slate-900 uppercase">Приём заказа</h2>
       
       <form onSubmit={submitOrder} className="space-y-4">
-        
-        {/* ИМЯ */}
+        {/* Блоки Имя, Город, Адрес, Телефон остаются без изменений */}
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Имя клиента</label>
-          <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 text-lg font-bold placeholder:text-slate-300 outline-none focus:ring-2 focus:ring-sky-200" placeholder="Как зовут" />
+          <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Имя клиента</label>
+          <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="Имя" />
         </div>
 
-        {/* ГОРОД */}
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Город</label>
+          <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Город</label>
           <div className="grid grid-cols-2 gap-2">
             {cities.map(c => (
               <button key={c.id} type="button" onClick={() => setCityId(c.id)} 
-                className={`p-4 rounded-xl font-bold transition-all border-2 text-sm ${cityId === c.id ? 'border-sky-500 bg-sky-50 text-sky-700 shadow-inner shadow-sky-100' : 'border-slate-50 bg-slate-50 text-slate-400'}`}>
+                className={`p-4 rounded-xl font-bold transition-all border-2 ${cityId === c.id ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-50 bg-slate-50 text-slate-400'}`}>
                 {c.name}
               </button>
             ))}
           </div>
         </div>
 
-        {/* АДРЕС */}
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Адрес доставки</label>
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 font-bold placeholder:text-slate-300 outline-none focus:ring-2 focus:ring-sky-200" placeholder="Улица, дом, кв" />
+          <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Адрес доставки</label>
+          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 font-bold" placeholder="Улица, дом, кв" />
         </div>
 
-        {/* ТЕЛЕФОН */}
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <label className="block text-xs font-bold text-slate-400 uppercase mb-2 ml-1">Телефон</label>
+          <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Телефон</label>
           <div className="flex gap-2">
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="flex-1 bg-slate-50 border-none rounded-xl p-4 text-lg font-bold placeholder:text-slate-300 outline-none focus:ring-2 focus:ring-sky-200" placeholder="770..." />
-            <button type="button" onClick={searchClient} className="bg-slate-950 text-white px-6 rounded-xl font-bold uppercase text-xs active:scale-95">Поиск</button>
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="flex-1 bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="770..." />
+            <button type="button" onClick={searchClient} className="bg-slate-900 text-white px-6 rounded-xl font-bold uppercase text-xs">Поиск</button>
           </div>
         </div>
 
-        {/* КОВРЫ */}
+        {/* СЕКЦИЯ КОВРОВ */}
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-          <div className="flex justify-between items-center mb-4 ml-1">
-            <label className="text-xs font-bold text-slate-400 uppercase">Изделия в заказе</label>
-            <button type="button" onClick={() => setLines([...lines, { id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])} className="text-sky-600 font-bold text-sm active:scale-95">+ Добавить ковёр</button>
+          <div className="flex justify-between items-center mb-4">
+            <label className="text-xs font-bold text-slate-400 uppercase">Изделия</label>
+            <button type="button" onClick={() => setLines([...lines, { id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])} className="text-sky-600 font-bold text-sm">+ Добавить</button>
           </div>
           
           <div className="space-y-4">
             {lines.map((line, idx) => {
               const area = lineAreaSqm(line)
               const opt = priceOptions.find(o => o.id === line.price_option_id)
-              const lineSum = (area && opt) ? baseLineTotal(area, opt.price_per_sqm) : 0
+              // Прямой расчет без внешних функций
+              const lineSum = (area && opt) ? area * Number(opt.price_per_sqm) : 0
 
               return (
-                <div key={line.id} className="p-4 bg-slate-50/50 rounded-2xl relative border border-slate-100">
-                  <div className="text-[10px] font-black text-slate-300 uppercase mb-2 ml-1">Ковёр №{idx + 1}</div>
+                <div key={line.id} className="p-4 bg-slate-50 rounded-2xl relative border border-slate-100">
+                  <div className="text-[10px] font-black text-slate-300 uppercase mb-2">Ковёр №{idx + 1}</div>
                   
                   <select value={line.price_option_id} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, price_option_id: e.target.value} : l))}
-                    className="w-full mb-3 bg-white border border-slate-100 rounded-xl p-3 font-bold text-slate-700 shadow-sm text-sm outline-none focus:ring-2 focus:ring-sky-100">
+                    className="w-full mb-3 bg-white border border-slate-100 rounded-xl p-3 font-bold text-slate-700">
                     {optionsForCity.map(o => <option key={o.id} value={o.id}>{o.name} ({Number(o.price_per_sqm)} ₸/м²)</option>)}
                   </select>
 
-                  {/* ВОТ ЗДЕСЬ ИЗМЕНЕНИЯ: ВСЁ В ОДНУ СТРОКУ */}
-                  <div className="grid grid-cols-3 gap-2 bg-white p-2 rounded-xl shadow-sm border border-slate-100">
+                  <div className="grid grid-cols-3 gap-2 bg-white p-2 rounded-xl border border-slate-100">
                     <div className="text-center border-r border-slate-100">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Длина (м)</span>
-                      <input type="text" inputMode="decimal" value={line.length_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, length_m: e.target.value} : l))} className="w-full p-0.5 border-none font-black text-base text-sky-600 outline-none text-center" placeholder="0.0" />
+                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Длина</span>
+                      <input type="text" inputMode="decimal" value={line.length_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, length_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-base text-sky-600 outline-none text-center" />
                     </div>
                     <div className="text-center border-r border-slate-100">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Ширина (м)</span>
-                      <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-0.5 border-none font-black text-base text-sky-600 outline-none text-center" placeholder="0.0" />
+                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Ширина</span>
+                      <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-base text-sky-600 outline-none text-center" />
                     </div>
                     <div className="text-center">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Площадь</span>
-                      <div className="font-black text-base text-slate-400 p-0.5">{area ? `${area} м²` : '—'}</div>
+                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Площадь</span>
+                      <div className="font-black text-base text-slate-400 p-1">{area ? `${area} м²` : '—'}</div>
                     </div>
                   </div>
 
-                  {/* СТОИМОСТЬ ОТДЕЛЬНО СНИЗУ */}
                   <div className="mt-3 text-right">
-                    <div className="text-xl font-black text-emerald-600 mr-1">
+                    <div className="text-xl font-black text-emerald-600 uppercase">
                       {lineSum > 0 ? `${lineSum.toLocaleString('ru-KZ')} ₸` : '0 ₸'}
                     </div>
                   </div>
 
-                  {lines.length > 1 && <button type="button" onClick={() => setLines(lines.filter(l => l.id !== line.id))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-lg active:scale-90">×</button>}
+                  {lines.length > 1 && <button type="button" onClick={() => setLines(lines.filter(l => l.id !== line.id))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-lg">×</button>}
                 </div>
               )
             })}
           </div>
         </div>
 
-        {/* ПОДВАЛ */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
+        {/* Футер с общей суммой */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
           <div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Итого заказ</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Общий итог</div>
             <div className="text-2xl font-black text-emerald-600 tracking-tight">{receptionTotal.toLocaleString('ru-KZ')} ₸</div>
           </div>
-          <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm shadow-xl shadow-sky-200 active:scale-95 disabled:opacity-50">
-            {loading ? '...' : 'Оформить'}
+          <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm active:scale-95 disabled:opacity-50">
+            Оформить
           </button>
         </div>
       </form>
