@@ -87,7 +87,6 @@ export function OrdersPage() {
       const p = normalizePhone(phone)
       let clientId = foundClient?.id
       const fullComment = `Адрес: ${address}. ${comment}`.trim()
-
       if (!clientId) {
         const { data: ins, error: e1 } = await supabase.from('clients').insert({
           phone: p, name: clientName || 'Клиент', city_id: cityId
@@ -95,20 +94,17 @@ export function OrdersPage() {
         if (e1) throw e1
         clientId = ins.id
       }
-      
       const { data: orderRow, error: e3 } = await supabase.from('orders').insert({
         client_id: clientId, city_id: cityId, comment: fullComment
       }).select('id').single()
       if (e3) throw e3
-
       const insertRows = lines.map(l => {
         const a = lineAreaSqm(l)
         const opt = priceOptions.find(o => o.id === l.price_option_id)
         return a && opt ? { order_id: orderRow.id, area_sqm: a, unit_price: opt.price_per_sqm, price_label: opt.name } : null
       }).filter(Boolean)
-
       await supabase.from('order_items').insert(insertRows)
-      setMsg({ type: 'ok', text: 'Заказ успешно оформлен!' })
+      setMsg({ type: 'ok', text: 'Заказ оформлен!' })
       setPhone(''); setClientName(''); setAddress(''); setComment('');
       setLines([{ id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])
     } catch (err: any) {
@@ -119,10 +115,8 @@ export function OrdersPage() {
   return (
     <div className="max-w-xl mx-auto p-4 pb-32">
       <h2 className="text-2xl font-black mb-6 text-slate-900 uppercase">Приём заказа</h2>
-      
       <form onSubmit={submitOrder} className="space-y-4">
         
-        {/* Данные клиента */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Имя клиента</label>
           <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="Имя" />
@@ -153,26 +147,21 @@ export function OrdersPage() {
           </div>
         </div>
 
-        {/* Ковры */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex justify-between items-center mb-4">
             <label className="text-xs font-bold text-slate-400 uppercase">Изделия</label>
             <button type="button" onClick={() => setLines([...lines, { id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])} className="text-sky-600 font-bold text-sm">+ Добавить</button>
           </div>
-          
           <div className="space-y-4">
             {lines.map((line, idx) => {
               const area = lineAreaSqm(line)
               const opt = priceOptions.find(o => o.id === line.price_option_id)
               const lineSum = (area && opt) ? baseLineTotal(area, opt.price_per_sqm) : 0
-
               return (
                 <div key={line.id} className="p-4 bg-slate-50 rounded-xl relative border border-slate-100">
-                  {/* ИСПОЛЬЗУЕМ idx ТУТ - ТЕПЕРЬ ВЕРСЕЛЬ НЕ ОШИБЕТСЯ */}
-                  <div className="text-[10px] font-black text-slate-300 uppercase mb-2">Ковёр №{idx + 1}</div>
-                  
+                  <div className="text-[10px] font-black text-slate-300 uppercase mb-2">Изделие №{idx + 1}</div>
                   <select value={line.price_option_id} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, price_option_id: e.target.value} : l))}
-                    className="w-full mb-3 bg-white border-none rounded-lg p-3 font-bold text-slate-700 shadow-sm shadow-slate-100">
+                    className="w-full mb-3 bg-white border-none rounded-lg p-3 font-bold text-slate-700 shadow-sm">
                     {optionsForCity.map(o => <option key={o.id} value={o.id}>{o.name} ({Number(o.price_per_sqm)} ₸/м²)</option>)}
                   </select>
                   <div className="grid grid-cols-2 gap-3">
@@ -185,17 +174,15 @@ export function OrdersPage() {
                       <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600 outline-none" placeholder="0.0" />
                     </div>
                   </div>
-
-                  {/* РАСЧЕТ ВНУТРИ КАРТОЧКИ */}
+                  {/* ГАРАНТИРОВАННЫЙ ВЫВОД ПЛОЩАДИ И СТОИМОСТИ */}
                   <div className="mt-3 flex justify-between items-center border-t border-slate-200 pt-2">
-                    <div className="text-[10px] font-black text-slate-400 uppercase">
-                      {area ? `Площадь: ${area} м²` : ''}
+                    <div className="text-[11px] font-black text-slate-500 uppercase">
+                      {area ? `S = ${area} м²` : 'Введите размеры'}
                     </div>
-                    <div className="text-sm font-black text-emerald-600">
-                      {lineSum > 0 ? `${lineSum.toLocaleString('ru-KZ')} ₸` : ''}
+                    <div className="text-base font-black text-emerald-600">
+                      {lineSum > 0 ? `${lineSum.toLocaleString('ru-KZ')} ₸` : '0 ₸'}
                     </div>
                   </div>
-
                   {lines.length > 1 && <button type="button" onClick={() => setLines(lines.filter(l => l.id !== line.id))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-lg">×</button>}
                 </div>
               )
@@ -203,14 +190,13 @@ export function OrdersPage() {
           </div>
         </div>
 
-        {/* Подвал с итогом */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
           <div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Итого к оплате</div>
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">К оплате</div>
             <div className="text-2xl font-black text-emerald-600 tracking-tight">{receptionTotal.toLocaleString('ru-KZ')} ₸</div>
           </div>
           <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm shadow-xl shadow-sky-200 active:scale-95 disabled:opacity-50">
-            {loading ? '...' : 'Оформить'}
+            Оформить
           </button>
         </div>
       </form>
