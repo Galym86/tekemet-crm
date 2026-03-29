@@ -30,7 +30,7 @@ export function OrdersPage() {
   const [cityId, setCityId] = useState('')
   const [phone, setPhone] = useState('')
   const [clientName, setClientName] = useState('')
-  const [address, setAddress] = useState('') // Новое поле Адрес
+  const [address, setAddress] = useState('')
   const [foundClient, setFoundClient] = useState<Client | null>(null)
   const [lines, setLines] = useState<LineDraft[]>([
     { id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: '' },
@@ -86,7 +86,6 @@ export function OrdersPage() {
     try {
       const p = normalizePhone(phone)
       let clientId = foundClient?.id
-      // Объединяем адрес и комментарий для сохранения
       const fullComment = `Адрес: ${address}. ${comment}`.trim()
 
       if (!clientId) {
@@ -119,17 +118,15 @@ export function OrdersPage() {
 
   return (
     <div className="max-w-xl mx-auto p-4 pb-32">
-      <h2 className="text-2xl font-black mb-6 text-slate-900 uppercase tracking-tight">Приём заказа</h2>
+      <h2 className="text-2xl font-black mb-6 text-slate-900 uppercase">Приём заказа</h2>
       
       <form onSubmit={submitOrder} className="space-y-4">
         
-        {/* 1. ИМЯ */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Имя клиента</label>
-          <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="Напр: Арман" />
+          <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="Имя" />
         </div>
 
-        {/* 2. ГОРОД */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Город</label>
           <div className="grid grid-cols-2 gap-2">
@@ -142,33 +139,33 @@ export function OrdersPage() {
           </div>
         </div>
 
-        {/* 3. АДРЕС */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Адрес доставки</label>
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 font-bold" placeholder="Микрорайон, дом, квартира" />
+          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-slate-50 border-none rounded-xl p-4 font-bold" placeholder="Улица, дом, кв" />
         </div>
 
-        {/* 4. ТЕЛЕФОН */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Телефон</label>
           <div className="flex gap-2">
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="flex-1 bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="77071234567" />
-            <button type="button" onClick={searchClient} className="bg-slate-900 text-white px-6 rounded-xl font-bold uppercase text-xs">Найти</button>
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="flex-1 bg-slate-50 border-none rounded-xl p-4 text-lg font-bold" placeholder="770..." />
+            <button type="button" onClick={searchClient} className="bg-slate-900 text-white px-6 rounded-xl font-bold uppercase text-xs">Поиск</button>
           </div>
         </div>
 
-        {/* БЛОК КОВРОВ */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
           <div className="flex justify-between items-center mb-4">
-            <label className="text-xs font-bold text-slate-400 uppercase">Данные ковров</label>
+            <label className="text-xs font-bold text-slate-400 uppercase">Изделия</label>
             <button type="button" onClick={() => setLines([...lines, { id: crypto.randomUUID(), length_m: '', width_m: '', price_option_id: optionsForCity[0]?.id || '' }])} className="text-sky-600 font-bold text-sm">+ Добавить</button>
           </div>
           
           <div className="space-y-4">
-            {lines.map((line) => {
+            {lines.map((line, idx) => {
               const area = lineAreaSqm(line)
               return (
                 <div key={line.id} className="p-4 bg-slate-50 rounded-xl relative border border-slate-100">
+                  {/* ВОТ ЗДЕСЬ МЫ ИСПОЛЬЗУЕМ idx, ЧТОБЫ ВЕРСЕЛЬ НЕ РУГАЛСЯ */}
+                  <div className="text-[10px] font-black text-slate-300 uppercase mb-2">Ковёр №{idx + 1}</div>
+                  
                   <select value={line.price_option_id} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, price_option_id: e.target.value} : l))}
                     className="w-full mb-3 bg-white border-none rounded-lg p-3 font-bold text-slate-700 shadow-sm">
                     {optionsForCity.map(o => <option key={o.id} value={o.id}>{o.name} ({Number(o.price_per_sqm)} ₸/м²)</option>)}
@@ -176,33 +173,14 @@ export function OrdersPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-white p-2 rounded-lg shadow-sm">
                       <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Длина</span>
-                      <input type="text" inputMode="decimal" value={line.length_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, length_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600" placeholder="0.0" />
+                      <input type="text" inputMode="decimal" value={line.length_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, length_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600" />
                     </div>
                     <div className="bg-white p-2 rounded-lg shadow-sm">
                       <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">Ширина</span>
-                      <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600" placeholder="0.0" />
+                      <input type="text" inputMode="decimal" value={line.width_m} onChange={e => setLines(lines.map(l => l.id === line.id ? {...l, width_m: e.target.value} : l))} className="w-full p-1 border-none font-black text-lg text-sky-600" />
                     </div>
                   </div>
                   {area && <div className="mt-3 text-right text-xs font-black text-slate-400 uppercase">Площадь: {area} м²</div>}
                   {lines.length > 1 && <button type="button" onClick={() => setLines(lines.filter(l => l.id !== line.id))} className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-lg">×</button>}
                 </div>
               )
-            })}
-          </div>
-        </div>
-
-        {/* КНОПКА ОФОРМЛЕНИЯ */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-slate-100 flex items-center justify-between gap-4 max-w-xl mx-auto shadow-2xl z-50">
-          <div>
-            <div className="text-[10px] text-slate-400 font-bold uppercase">Итого к оплате</div>
-            <div className="text-2xl font-black text-emerald-600 tracking-tight">{receptionTotal.toLocaleString('ru-KZ')} ₸</div>
-          </div>
-          <button type="submit" disabled={loading} className="bg-sky-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-sm shadow-xl shadow-sky-200 active:scale-95 disabled:opacity-50">
-            {loading ? '...' : 'Оформить'}
-          </button>
-        </div>
-      </form>
-      {msg && <div className={`mt-4 p-4 rounded-2xl text-center font-black uppercase text-xs ${msg.type === 'ok' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>{msg.text}</div>}
-    </div>
-  )
-}
